@@ -1,0 +1,9 @@
+{
+	"name": "Daisy-test",
+	"location": "canadaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "1a0bb717-81d7-40c6-ad7f-0aedad72e704",
+		"tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+	}
+}
