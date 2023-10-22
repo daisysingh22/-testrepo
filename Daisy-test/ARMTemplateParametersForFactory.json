@@ -4,6 +4,9 @@
 	"parameters": {
 		"factoryName": {
 			"value": "Daisy-test"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
 		}
 	}
 }
