@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "HttpServer",
 		"typeProperties": {
-			"url": "https://login.salesforce.com/services/Soap/u/52.0",
+			"url": "https://demosoapsvc.azurewebsites.net/",
 			"enableServerCertificateValidation": true,
 			"authenticationType": "Anonymous"
 		}
