@@ -1,0 +1,23 @@
+{
+	"name": "EDI_SFTP",
+	"properties": {
+		"annotations": [],
+		"type": "Sftp",
+		"typeProperties": {
+			"host": "edigisqa.follett.com",
+			"port": "2139",
+			"skipHostKeyValidation": true,
+			"authenticationType": "Basic",
+			"userName": "MMSSMGPos",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "DefaultKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "EDISFTPPwd"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

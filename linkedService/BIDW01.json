@@ -1,0 +1,24 @@
+{
+	"name": "BIDW01",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "Integrated Security=True;Data Source=VmxxhegbiDW01;Initial Catalog=master",
+			"userName": "NA\\DataLakeAutomation",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "DefaultKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "DLAutomationPwd"
+			}
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntime1",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

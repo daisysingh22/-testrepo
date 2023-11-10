@@ -1,0 +1,806 @@
+{
+	"name": "Ingest POS Transaction Data",
+	"properties": {
+		"activities": [
+			{
+				"name": "If read from SFTP",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set variable start time",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@pipeline().parameters.ReadFromSFTP",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Get Metadata from FS",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "OnPremFS_CSVFile",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": {
+											"value": "@pipeline().parameters.SourceFolderName",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										},
+										"DelimiterChar": {
+											"value": "@pipeline().parameters.DelimiterChar",
+											"type": "Expression"
+										},
+										"WithHeader": false
+									}
+								},
+								"fieldList": [
+									"itemName",
+									"itemType"
+								],
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Copy data from FS to internal table",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata from FS",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "FileName",
+											"value": {
+												"value": "@pipeline().parameters.FileName",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "RefreshTime",
+											"value": {
+												"value": "@utcNow()",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "@{if(pipeline().parameters.TruncateData,\r\n'truncate table POS.Raw_Transaction',\r\n'')}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "OnPremFS_CSVFile",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": {
+											"value": "@pipeline().parameters.SourceFolderName",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										},
+										"DelimiterChar": {
+											"value": "@pipeline().parameters.DelimiterChar",
+											"type": "Expression"
+										},
+										"WithHeader": true
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ConfigTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "POS",
+										"TableName": "Raw_Transaction"
+									}
+								}
+							]
+						},
+						{
+							"name": "Set variable fileexists for fs",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata from FS",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileExists",
+								"value": false
+							}
+						},
+						{
+							"name": "Set variable error msg for fs",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set variable fileexists for fs",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ErrorMessage",
+								"value": {
+									"value": "@string(activity('Get Metadata from FS').error.Message)",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Get Metadata from SFTP",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "EDISFTP_CSVFile",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": "/PickUp",
+										"FileName": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										},
+										"DelimiterChar": ",",
+										"WithHeader": true
+									}
+								},
+								"fieldList": [
+									"itemName",
+									"itemType",
+									"lastModified"
+								],
+								"storeSettings": {
+									"type": "SftpReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false,
+									"disableChunking": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Copy data from SFTP to internal table",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata from SFTP",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "FileName",
+											"value": {
+												"value": "@pipeline().parameters.FileName",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "RefreshTime",
+											"value": {
+												"value": "@utcNow()",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "SftpReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false,
+										"disableChunking": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "@{if(pipeline().parameters.TruncateData,\r\n'truncate table POS.Raw_Transaction',\r\n'')}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "EDISFTP_CSVFile",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": "/PickUp",
+										"FileName": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										},
+										"DelimiterChar": ",",
+										"WithHeader": true
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ConfigTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "POS",
+										"TableName": "Raw_Transaction"
+									}
+								}
+							]
+						},
+						{
+							"name": "Set variable Rows copied",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy data from SFTP to internal table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "NumberOfRecords",
+								"value": {
+									"value": "@activity('Copy data from SFTP to internal table').output.rowsCopied",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable fileexists for sftp",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata from SFTP",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileExists",
+								"value": false
+							}
+						},
+						{
+							"name": "Set variable error msg for sftp",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set variable fileexists for sftp",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ErrorMessage",
+								"value": {
+									"value": "@string(activity('Get Metadata from SFTP').error.Message)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Delete Source file",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If file exists",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(pipeline().parameters.ReadFromSFTP,\npipeline().parameters.DeleteSourceFile)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Delete file",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "EDISFTP_CSVFile",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": "/PickUp",
+										"FileName": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										},
+										"DelimiterChar": ",",
+										"WithHeader": true
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "SftpReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false,
+									"disableChunking": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set variable start time",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StartTime",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Update Running Status",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "If Delete Source file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_DataCopyMapping_update]",
+					"storedProcedureParameters": {
+						"DataCopyMappingPK": {
+							"value": {
+								"value": "@pipeline().parameters.DataCopyMappingPK",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"EndDateTime": {
+							"value": {
+								"value": "@utcNow()",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						},
+						"ErrorMsg": {
+							"value": {
+								"value": "@variables('ErrorMessage')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"LastLoadRecords": {
+							"value": {
+								"value": "@variables('NumberOfRecords')",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"NewWaterMarkId": {
+							"value": {
+								"value": "@variables('NewWaterMarkValue')",
+								"type": "Expression"
+							},
+							"type": "Int64"
+						},
+						"StartDateTime": {
+							"value": {
+								"value": "@variables('StartTime')",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabasePrivate",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "If file exists",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If read from SFTP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('FileExists')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy data to DL file",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": "select * from POS.Raw_Transaction",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ConfigTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "POS",
+										"TableName": "Raw_Transaction"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "CDP_Internal_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@pipeline().parameters.ExportContainerName",
+											"type": "Expression"
+										},
+										"FilePath": {
+											"value": "@pipeline().parameters.ExportFolderName",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@pipeline().parameters.ExportFileName",
+											"type": "Expression"
+										},
+										"EscapeChar": "\"",
+										"DelimiterChar": {
+											"value": "@pipeline().parameters.ExportDelimiterChar",
+											"type": "Expression"
+										},
+										"WithHeader": true
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy data to Archive table",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy data to DL file",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": "select * from POS.Raw_Transaction",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ConfigTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "POS",
+										"TableName": "Raw_Transaction"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ConfigTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "POS",
+										"TableName": "Raw_Transaction_Archive"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"FileName": {
+				"type": "string",
+				"defaultValue": "smgposemail.20231107232959.csv"
+			},
+			"ExportFolderName": {
+				"type": "string",
+				"defaultValue": "POS/2023/11/08/"
+			},
+			"ExportFileName": {
+				"type": "string",
+				"defaultValue": "POS.Transactions.20231107.csv"
+			},
+			"DelimiterChar": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"ExportDelimiterChar": {
+				"type": "string",
+				"defaultValue": "|"
+			},
+			"WithHeader": {
+				"type": "bool",
+				"defaultValue": true
+			},
+			"SourceFolderName": {
+				"type": "string"
+			},
+			"ExportEscapeChar": {
+				"type": "string",
+				"defaultValue": "\""
+			},
+			"TruncateData": {
+				"type": "bool",
+				"defaultValue": true
+			},
+			"ReadFromSFTP": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"DeleteSourceFile": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"ExportContainerName": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"DataCopyMappingPK": {
+				"type": "string",
+				"defaultValue": "9"
+			}
+		},
+		"variables": {
+			"ErrorMessage": {
+				"type": "String"
+			},
+			"StartTime": {
+				"type": "String"
+			},
+			"NumberOfRecords": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"NewWaterMarkValue": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"FileExists": {
+				"type": "Boolean",
+				"defaultValue": true
+			}
+		},
+		"folder": {
+			"name": "Ingestion/subpipelines"
+		},
+		"annotations": []
+	}
+}

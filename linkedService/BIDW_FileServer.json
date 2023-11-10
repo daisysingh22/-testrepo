@@ -1,0 +1,24 @@
+{
+	"name": "BIDW_FileServer",
+	"properties": {
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "\\\\vmxxhegbidw01\\Archive",
+			"userId": "NA\\DataLakeAutomation",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "DefaultKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "DLAutomationPwd"
+			}
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntime1",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

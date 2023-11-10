@@ -1,0 +1,70 @@
+{
+	"name": "BIDW_Table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "BIDW01",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"SchemaName": {
+				"type": "string"
+			},
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Ingestion"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "job_name",
+				"type": "varchar"
+			},
+			{
+				"name": "start_time",
+				"type": "datetime2",
+				"scale": 3
+			},
+			{
+				"name": "end_time",
+				"type": "datetime2",
+				"scale": 3
+			},
+			{
+				"name": "rows_inserted",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "rows_updated",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "error_number",
+				"type": "varchar"
+			},
+			{
+				"name": "error_message",
+				"type": "varchar"
+			},
+			{
+				"name": "other_message",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().SchemaName",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	}
+}

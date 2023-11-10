@@ -1,0 +1,122 @@
+{
+	"name": "Common Logging Adapter",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set variable LoggingStatus",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "LoggingStatus",
+					"value": {
+						"value": "@pipeline().parameters.LoggingStatus",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Stored procedure1",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Set variable LoggingStatus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Logging].[usp_EmailLogging_Insert]",
+					"storedProcedureParameters": {
+						"EmailBody": {
+							"value": {
+								"value": "@pipeline().parameters.EmailBody",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EmailCC": {
+							"value": {
+								"value": "@pipeline().parameters.EmailCC",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EmailImportance": {
+							"value": {
+								"value": "@pipeline().parameters.EmailImportance",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EmailSubject": {
+							"value": {
+								"value": "@pipeline().parameters.EmailSubject",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EmailTo": {
+							"value": {
+								"value": "@pipeline().parameters.EmailToList",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabasePrivate",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"LoggingStatus": {
+				"type": "string",
+				"defaultValue": "Success"
+			},
+			"EmailToList": {
+				"type": "string",
+				"defaultValue": "lzhang@follett.com"
+			},
+			"EmailSubject": {
+				"type": "string",
+				"defaultValue": "EmailSubject"
+			},
+			"EmailBody": {
+				"type": "string",
+				"defaultValue": "Email Body"
+			},
+			"EmailImportance": {
+				"type": "string",
+				"defaultValue": "Normal"
+			},
+			"EmailCC": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"LoggingStatus": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common"
+		},
+		"annotations": []
+	}
+}

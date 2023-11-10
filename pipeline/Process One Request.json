@@ -1,0 +1,524 @@
+{
+	"name": "Process One Request",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set variable RequestType",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "RequestType",
+					"value": {
+						"value": "@pipeline().parameters.RequestType",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Switch RequestType",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Set variable RequestType",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@variables('RequestType')",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "MMSODBC",
+							"activities": [
+								{
+									"name": "Ingest MMS data",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Ingest MMS data",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"SourceFolderName": {
+												"value": "@concat('')",
+												"type": "Expression"
+											},
+											"FileName": {
+												"value": "@concat(pipeline().parameters.SourceObjectName,\n'.',\npipeline().parameters.SourceSubObjectName,\n'.csv')",
+												"type": "Expression"
+											},
+											"DelimiterChar": {
+												"value": "@pipeline().parameters.DelimiterChar",
+												"type": "Expression"
+											},
+											"ExportFolderName": {
+												"value": "@concat(variables('RequestType'),\n'/',\npipeline().parameters.SourceSystemDatabaseName,\n'/',\nformatDateTime(utcnow(),'yyyy/MM/dd/'))",
+												"type": "Expression"
+											},
+											"ExportFileName": {
+												"value": "@concat(pipeline().parameters.SourceObjectName,\n'.',\npipeline().parameters.SourceSubObjectName,\n'.csv')",
+												"type": "Expression"
+											},
+											"ExportDelimiterChar": {
+												"value": "@pipeline().parameters.DelimiterChar",
+												"type": "Expression"
+											},
+											"StageSchemaName": {
+												"value": "@pipeline().parameters.StageSchemaName",
+												"type": "Expression"
+											},
+											"StageTableName": {
+												"value": "@pipeline().parameters.StageTableName",
+												"type": "Expression"
+											},
+											"WithHeader": true,
+											"EscapeChar": {
+												"value": "@pipeline().parameters.EscapeChar",
+												"type": "Expression"
+											},
+											"ExportQuery": {
+												"value": "@pipeline().parameters.AdditionalInfo",
+												"type": "Expression"
+											},
+											"ExportContainerName": {
+												"value": "@pipeline().parameters.DestinationTableName",
+												"type": "Expression"
+											},
+											"DataCopyMappingPK": {
+												"value": "@pipeline().parameters.DataCopyMappingPK",
+												"type": "Expression"
+											},
+											"MaxLoadRecordCounts": {
+												"value": "@pipeline().parameters.MaxLoadRecordCounts",
+												"type": "Expression"
+											},
+											"AdditionalInfo": {
+												"value": "@pipeline().parameters.AdditionalInfo",
+												"type": "Expression"
+											},
+											"SourceDatabaseName": {
+												"value": "@pipeline().parameters.SourceSystemDatabaseName",
+												"type": "Expression"
+											},
+											"SourceSchemaName": {
+												"value": "@pipeline().parameters.SourceObjectName",
+												"type": "Expression"
+											},
+											"SourceTableName": {
+												"value": "@pipeline().parameters.SourceSubObjectName",
+												"type": "Expression"
+											},
+											"IsIncrementalLoad": {
+												"value": "@pipeline().parameters.IsIncrementalLoad",
+												"type": "Expression"
+											},
+											"WaterMarkColumn": {
+												"value": "@pipeline().parameters.StagePrimaryColumn",
+												"type": "Expression"
+											},
+											"WaterMarkValue": {
+												"value": "@pipeline().parameters.LastWaterMarkId",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Common Logging Adapter--Success for MMS",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Ingest MMS data",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Common Logging Adapter",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"LoggingStatus": "Success",
+											"EmailToList": {
+												"value": "@pipeline().parameters.SuccessNotifyEmailList",
+												"type": "Expression"
+											},
+											"EmailSubject": {
+												"value": "@concat('The processing of your MMS data is finished successfully (',\npipeline().parameters.RunningEnvironment,\n')'\n)",
+												"type": "Expression"
+											},
+											"EmailBody": {
+												"value": "@pipeline().parameters.SourceSubObjectName",
+												"type": "Expression"
+											},
+											"EmailImportance": "Normal"
+										}
+									}
+								},
+								{
+									"name": "Common Logging Adapter--Failed  for MMS",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Ingest MMS data",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Common Logging Adapter",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"LoggingStatus": "Failure",
+											"EmailToList": {
+												"value": "@pipeline().parameters.FailedNotifyEmailList",
+												"type": "Expression"
+											},
+											"EmailSubject": {
+												"value": "@concat('The processing of your MMS data failed (',\npipeline().parameters.RunningEnvironment,\n')')",
+												"type": "Expression"
+											},
+											"EmailBody": {
+												"value": "@pipeline().parameters.SourceSubObjectName",
+												"type": "Expression"
+											},
+											"EmailImportance": "High"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "MMSviaDL",
+							"activities": [
+								{
+									"name": "Ingest MMS data via DataLake",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Ingest MMS data via DataLake",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"SourceFolderName": {
+												"value": "@concat('MMSODBC/mm4r6lib_odbc_QA/',\nformatDateTime(utcnow(),'yyyy/MM/dd/'))",
+												"type": "Expression"
+											},
+											"FileName": {
+												"value": "@concat(pipeline().parameters.SourceObjectName,\n'.',\npipeline().parameters.SourceSubObjectName,\n'.csv')",
+												"type": "Expression"
+											},
+											"DelimiterChar": {
+												"value": "@pipeline().parameters.DelimiterChar",
+												"type": "Expression"
+											},
+											"ExportFolderName": {
+												"value": "@concat(variables('RequestType'),\n'/',\npipeline().parameters.SourceSystemDatabaseName,\n'/',\nformatDateTime(utcnow(),'yyyy/MM/dd/'))",
+												"type": "Expression"
+											},
+											"ExportFileName": {
+												"value": "@concat(pipeline().parameters.SourceObjectName,\n'.',\npipeline().parameters.SourceSubObjectName,\n'.csv')",
+												"type": "Expression"
+											},
+											"ExportDelimiterChar": {
+												"value": "@pipeline().parameters.DelimiterChar",
+												"type": "Expression"
+											},
+											"StageSchemaName": {
+												"value": "@pipeline().parameters.StageSchemaName",
+												"type": "Expression"
+											},
+											"StageTableName": {
+												"value": "@pipeline().parameters.StageTableName",
+												"type": "Expression"
+											},
+											"WithHeader": true,
+											"EscapeChar": {
+												"value": "@pipeline().parameters.EscapeChar",
+												"type": "Expression"
+											},
+											"ExportQuery": {
+												"value": "@pipeline().parameters.AdditionalInfo",
+												"type": "Expression"
+											},
+											"ExportContainerName": {
+												"value": "@pipeline().parameters.DestinationTableName",
+												"type": "Expression"
+											},
+											"SourceContainerName": {
+												"value": "@pipeline().parameters.DestinationTableName",
+												"type": "Expression"
+											},
+											"DataCopyMappingPK": {
+												"value": "@pipeline().parameters.DataCopyMappingPK",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "POS",
+							"activities": [
+								{
+									"name": "Ingest POS Transaction Data",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Set variable source file name",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Ingest POS Transaction Data",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"FileName": {
+												"value": "@variables('SourceFileName')",
+												"type": "Expression"
+											},
+											"ExportFolderName": {
+												"value": "@concat('POS/',\nformatDateTime(utcNow(), 'yyyy/MM/dd/'))",
+												"type": "Expression"
+											},
+											"ExportFileName": {
+												"value": "@concat('POS.Transactions.',\nformatDateTime(utcNow(),'yyyyMMdd'),\n'.csv')",
+												"type": "Expression"
+											},
+											"DelimiterChar": ",",
+											"ExportDelimiterChar": {
+												"value": "@pipeline().parameters.DelimiterChar",
+												"type": "Expression"
+											},
+											"WithHeader": true,
+											"SourceFolderName": {
+												"value": "@concat('')",
+												"type": "Expression"
+											},
+											"ExportEscapeChar": {
+												"value": "@pipeline().parameters.EscapeChar",
+												"type": "Expression"
+											},
+											"TruncateData": true,
+											"ReadFromSFTP": true,
+											"DeleteSourceFile": false,
+											"ExportContainerName": {
+												"value": "@pipeline().parameters.DestinationTableName",
+												"type": "Expression"
+											},
+											"DataCopyMappingPK": {
+												"value": "@pipeline().parameters.DataCopyMappingPK",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Set variable source file name",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "SourceFileName",
+										"value": {
+											"value": "@replace(pipeline().parameters.SourceSubObjectName,\n'<DATE>',formatDateTime(adddays(utcnow(),-1),'yyyyMMdd')\n)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Common Logging Adapter--Success for POS",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Ingest POS Transaction Data",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Common Logging Adapter",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"LoggingStatus": "Success",
+											"EmailToList": {
+												"value": "@pipeline().parameters.SuccessNotifyEmailList",
+												"type": "Expression"
+											},
+											"EmailSubject": "The processing of your POS data is finished successfully",
+											"EmailBody": {
+												"value": "@variables('SourceFileName')",
+												"type": "Expression"
+											},
+											"EmailImportance": "Normal"
+										}
+									}
+								},
+								{
+									"name": "Common Logging Adapter--Failed for POS",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Ingest POS Transaction Data",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Common Logging Adapter",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"LoggingStatus": "Failure",
+											"EmailToList": {
+												"value": "@pipeline().parameters.FailedNotifyEmailList",
+												"type": "Expression"
+											},
+											"EmailSubject": "The processing of your POS data failed",
+											"EmailBody": {
+												"value": "@variables('SourceFileName')",
+												"type": "Expression"
+											},
+											"EmailImportance": "High"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"RequestType": {
+				"type": "string"
+			},
+			"SourceSystemDatabaseName": {
+				"type": "string"
+			},
+			"SourceObjectName": {
+				"type": "string"
+			},
+			"SourceSubObjectName": {
+				"type": "string"
+			},
+			"DelimiterChar": {
+				"type": "string"
+			},
+			"StageSchemaName": {
+				"type": "string"
+			},
+			"StageTableName": {
+				"type": "string"
+			},
+			"StagePrimaryColumn": {
+				"type": "string"
+			},
+			"LastWaterMarkId": {
+				"type": "int"
+			},
+			"IsIncrementalLoad": {
+				"type": "bool"
+			},
+			"DestinationTableName": {
+				"type": "string"
+			},
+			"StorageProcedureName": {
+				"type": "string"
+			},
+			"LastProcessDate": {
+				"type": "string"
+			},
+			"ProcessWaitingIntervalHours": {
+				"type": "int"
+			},
+			"SuccessNotifyEmailList": {
+				"type": "string"
+			},
+			"FailedNotifyEmailList": {
+				"type": "string"
+			},
+			"ProjectName": {
+				"type": "string"
+			},
+			"MaxLoadRecordCounts": {
+				"type": "int"
+			},
+			"hasPIIData": {
+				"type": "bool"
+			},
+			"PIIColumns": {
+				"type": "string"
+			},
+			"AdditionalInfo": {
+				"type": "string"
+			},
+			"DataCopyMappingPK": {
+				"type": "int"
+			},
+			"EscapeChar": {
+				"type": "string"
+			},
+			"RunningEnvironment": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"RequestType": {
+				"type": "String"
+			},
+			"SourceFileName": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Ingestion"
+		},
+		"annotations": []
+	}
+}

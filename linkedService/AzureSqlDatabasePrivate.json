@@ -1,0 +1,10 @@
+{
+	"name": "AzureSqlDatabasePrivate",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=prod-use-db-bi-sqlsrv-01.database.windows.net;Initial Catalog=prod-use-db-bi-sql-01"
+		}
+	}
+}

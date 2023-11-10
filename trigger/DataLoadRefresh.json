@@ -1,0 +1,31 @@
+{
+	"name": "DataLoadRefresh",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Month",
+				"interval": 1,
+				"startTime": "2022-09-11T08:00:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						8
+					],
+					"monthlyOccurrences": [
+						{
+							"day": "Saturday",
+							"occurrence": 2
+						}
+					]
+				}
+			}
+		}
+	}
+}

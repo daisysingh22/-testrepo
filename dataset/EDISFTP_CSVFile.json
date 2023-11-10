@@ -1,0 +1,49 @@
+{
+	"name": "EDISFTP_CSVFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "EDI_SFTP",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FolderName": {
+				"type": "string",
+				"defaultValue": "Pickup"
+			},
+			"FileName": {
+				"type": "string"
+			},
+			"DelimiterChar": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"WithHeader": {
+				"type": "bool",
+				"defaultValue": true
+			}
+		},
+		"folder": {
+			"name": "Ingestion"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "SftpLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().FolderName",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
