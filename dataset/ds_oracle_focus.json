@@ -1,0 +1,34 @@
+{
+	"name": "ds_oracle_focus",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_opfocus_v2",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"sch_ema": {
+				"type": "string"
+			},
+			"tab_le": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "oracle"
+		},
+		"annotations": [],
+		"type": "OracleTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().sch_ema",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().tab_le",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

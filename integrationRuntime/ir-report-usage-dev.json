@@ -1,0 +1,13 @@
+{
+	"name": "ir-report-usage-dev",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Linked IR pointing to ir-report-usage-prod on insights-prod-adf-v2",
+		"typeProperties": {
+			"linkedInfo": {
+				"resourceId": "/subscriptions/4874e1ec-0d32-47aa-90d4-7971979552c9/resourcegroups/insights-prod-rg/providers/Microsoft.DataFactory/factories/insights-prod-adf-v2/integrationruntimes/ir-report-usage-prod",
+				"authorizationType": "Rbac"
+			}
+		}
+	}
+}

@@ -1,0 +1,52 @@
+{
+	"name": "DelimitedText3",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Azure_gen2_T",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "MaintenanceRaw/Notes",
+				"fileSystem": "insightsdls"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "NOTE_ID",
+				"type": "String"
+			},
+			{
+				"name": "NOTE_TYPE",
+				"type": "String"
+			},
+			{
+				"name": "CREATE_TIMESTAMP",
+				"type": "String"
+			},
+			{
+				"name": "CREATE_BY_NAME",
+				"type": "String"
+			},
+			{
+				"name": "NOTE_PRIMARY_KEY_ID",
+				"type": "String"
+			},
+			{
+				"name": "CREATED_BY_ID",
+				"type": "String"
+			},
+			{
+				"name": "NOTES_1",
+				"type": "String"
+			}
+		]
+	}
+}

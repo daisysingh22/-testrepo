@@ -1,0 +1,49 @@
+{
+	"name": "server_notes",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SqlServer1_notes",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "NOTE_ID",
+				"type": "nvarchar"
+			},
+			{
+				"name": "NOTE_TYPE",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CREATE_TIMESTAMP",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CREATE_BY_NAME",
+				"type": "nvarchar"
+			},
+			{
+				"name": "NOTE_PRIMARY_KEY_ID",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CREATED_BY_ID",
+				"type": "nvarchar"
+			},
+			{
+				"name": "notes_1",
+				"type": "nvarchar"
+			},
+			{
+				"name": "notes_2",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "stg",
+			"table": "extFocusNotes_justcreated"
+		}
+	}
+}
